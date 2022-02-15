@@ -9,8 +9,8 @@ const main = async () => {
   engine.lightDirection = new Vec3(0, 0, -1)
 
 	const model = new Model()
-  await model.load('/tinyrenderer/obj/african_head/african_head.obj')
-  await model.loadTexture('/tinyrenderer/obj/african_head/african_head_diffuse.tga')
+  await model.load('/obj/african_head/african_head.obj')
+  await model.loadTexture('/obj/african_head/african_head_diffuse.tga')
 
   engine.renderModel(model)
 }
