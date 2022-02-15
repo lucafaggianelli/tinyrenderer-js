@@ -1,12 +1,18 @@
 import { Vec3 } from "./geometry.js"
 import { drawTriangle, drawTriangleTexture } from './renderer.js'
 
+const MARGIN = 50
+
 export default class Engine {
   lastFrameTime = 0
 
   constructor (canvas) {
     this.canvas = canvas
+
     this.canvas.style.backgroundColor = 'slategrey'
+    this.canvas.style.width = '100%'
+    this.canvas.style.height = '100vh'
+
     this.ctx = this.canvas.getContext('2d')
 
     this.fpsContainer = document.createElement('div')
@@ -15,12 +21,14 @@ export default class Engine {
   }
 
   renderModel (model) {
+    const size = Math.min(this.canvas.height, this.canvas.height) - 2 * MARGIN
+
     const canvasWidth = this.canvas.width
     const canvasHeight = this.canvas.height
     const canvasData = this.ctx.getImageData(0, 0, canvasWidth, canvasHeight)
     const zBuffer = {}
 
-    const highlightFaces = [ 2 ]
+    const highlightFaces = []
 
     for (const faceIndex in model.faces) {
       const isHighlighted = highlightFaces.includes(parseInt(faceIndex))
@@ -40,8 +48,8 @@ export default class Engine {
         const vertex = model.vertices[vertexIndex]
 
         return new Vec3(
-          Math.round((vertex.x + 1) * canvasWidth / 2),
-          canvasHeight - Math.round((vertex.y + 1) * canvasHeight / 2),
+          Math.round((vertex.x + 1) * size / 2) + MARGIN,
+          size - Math.round((vertex.y + 1) * size / 2) + MARGIN,
           vertex.z
         )
       })
