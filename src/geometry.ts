@@ -63,13 +63,6 @@ export class Vec3 {
     this.z = Math.round(this.z)
     return this
   }
-
-  abs () {
-    this.x = Math.abs(this.x)
-    this.y = Math.abs(this.y)
-    this.z = Math.abs(this.z)
-    return this
-  }
 }
 
 export class Box {

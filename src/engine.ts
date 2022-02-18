@@ -70,7 +70,7 @@ export default class Engine {
           ...face.map(vertexIndex =>
             model.verticesNormals[vertexIndex].normalize().multiply(this.lightDirection!.normalize())
           )
-        ).abs()
+        )
       }
 
       const trianglePoints = face.map(vertexIndex => {
