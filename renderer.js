@@ -83,8 +83,8 @@ export const drawTriangleTexture = (points, texturePoints, canvasData, texture, 
 
       P.z = points[0].z * bc_screen.x + points[1].z * bc_screen.y + points[2].z * bc_screen.z
 
-      const zIndex = Math.round(P.x + P.y * canvasData.width)
-      if (zBuffer[zIndex] === undefined || zBuffer[zIndex] < P.z) {
+      const zIndex = P.x + P.y * canvasData.width
+      if (!(zIndex in zBuffer) || P.z > zBuffer[zIndex]) {
         zBuffer[zIndex] = P.z
 
         const textureCoord = translateCoords(P, bbox, textureBbox)

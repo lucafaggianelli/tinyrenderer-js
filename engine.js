@@ -1,7 +1,19 @@
-import { Vec3 } from "./geometry.js"
+import { Matrix, Vec3 } from "./geometry.js"
 import { drawTriangle, drawTriangleTexture } from './renderer.js'
 
-const MARGIN = 50
+const buildViewport = (x, y, w, h, depth) => {
+  const m = Matrix.identity(4)
+
+  m.data[0][3] = x+w/2
+  m.data[1][3] = y+h/2
+  m.data[2][3] = depth/2
+
+  m.data[0][0] = w/2
+  m.data[1][1] = h/2
+  m.data[2][2] = depth/2
+
+  return m
+}
 
 export default class Engine {
   lastFrameTime = 0
@@ -10,25 +22,38 @@ export default class Engine {
     this.canvas = canvas
 
     this.canvas.style.backgroundColor = 'slategrey'
-    this.canvas.style.width = '100%'
-    this.canvas.style.height = '100vh'
-
+    this.canvas.style.width = '800'
+    this.canvas.style.height = '800'
+    this.canvas.style.margin = '0 auto'
+    this.canvas.style.display = 'block'
     this.ctx = this.canvas.getContext('2d')
 
-    this.fpsContainer = document.createElement('div')
+    this.screenSize = Math.min(this.canvas.height, this.canvas.height)
 
+    this.camera = new Vec3(0, 0, 20)
+
+    this.projection = Matrix.identity(4)
+    this.projection.data[3][2] = -1 / this.camera.z
+
+    this.viewport = buildViewport(this.canvas.width / 8, this.canvas.height / 8, this.canvas.width * 3/4, this.canvas.height * 3/4, 255)
+
+    this.fpsContainer = document.createElement('div')
     document.body.appendChild(this.fpsContainer)
   }
 
-  renderModel (model) {
-    const size = Math.min(this.canvas.height, this.canvas.height) - 2 * MARGIN
+  baseTransformations () {
+    return this.viewport.multiply(this.projection)
+  }
 
+  renderModel (model) {
     const canvasWidth = this.canvas.width
     const canvasHeight = this.canvas.height
     const canvasData = this.ctx.getImageData(0, 0, canvasWidth, canvasHeight)
     const zBuffer = {}
 
     const highlightFaces = []
+
+    const transformations = this.baseTransformations()
 
     for (const faceIndex in model.faces) {
       const isHighlighted = highlightFaces.includes(parseInt(faceIndex))
@@ -41,17 +66,16 @@ export default class Engine {
       const lightIntensity = faceNormal.normalize().multiply(this.lightDirection)
 
       if (lightIntensity <= 0) {
-          continue
+        continue
       }
 
       const trianglePoints = face.map(vertexIndex => {
         const vertex = model.vertices[vertexIndex]
+        const v = transformations.multiply(Matrix.fromVector(vertex)).toVector()
+        v.y = canvasHeight - v.y
 
-        return new Vec3(
-          Math.round((vertex.x + 1) * size / 2) + MARGIN,
-          size - Math.round((vertex.y + 1) * size / 2) + MARGIN,
-          vertex.z
-        )
+        v.roundCoordinates()
+        return v
       })
 
       const texturePoints = facetTexture.map(vertexIndex => {
