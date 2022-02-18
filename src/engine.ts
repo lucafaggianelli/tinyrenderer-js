@@ -63,15 +63,14 @@ export default class Engine {
       const face = model.faces[faceIndex]
       const facetTexture = model.textureFacets[faceIndex]
 
-      const faceNormal = model.vertices[face[2]].subtract(model.vertices[face[0]])
-        .crossProduct(model.vertices[face[1]].subtract(model.vertices[face[0]]))
+      let lightIntensities = new Vec3(0, 0, 0)
 
-      const lightIntensity = this.lightDirection
-        ? faceNormal.normalize().multiply(this.lightDirection)
-        : 1
-
-      if (lightIntensity <= 0) {
-        continue
+      if (this.lightDirection) {
+        lightIntensities = new Vec3(
+          ...face.map(vertexIndex =>
+            model.verticesNormals[vertexIndex].normalize().multiply(this.lightDirection!.normalize())
+          )
+        ).abs()
       }
 
       const trianglePoints = face.map(vertexIndex => {
@@ -94,10 +93,9 @@ export default class Engine {
           ).roundCoordinates()
         })
 
-        drawTriangleTexture(trianglePoints, texturePoints, canvasData, model.texture, zBuffer, lightIntensity)
+        drawTriangleTexture(trianglePoints, texturePoints, canvasData, model.texture, zBuffer, lightIntensities)
       } else {
-        const color = new Color(255, 255, 255).luminosity(lightIntensity)
-        drawTriangle(trianglePoints, canvasData, color, zBuffer)
+        drawTriangle(trianglePoints, canvasData, Color.WHITE, zBuffer, lightIntensities)
       }
     }
 

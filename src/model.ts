@@ -4,11 +4,12 @@ import TgaLoader from 'tga-js'
 import { Vec3 } from './geometry.js'
 
 export default class Model {
-  vertices: Vec3[] = []
-  textureVertices: Vec3[] = []
   faces: [number, number, number][] = []
   textureFacets: [number, number, number][] = []
+  textureVertices: Vec3[] = []
   texture?: ImageData
+  vertices: Vec3[] = []
+  verticesNormals: Vec3[] = []
 
   load = async (url: string) => {
     const response = await fetch(url)
@@ -37,12 +38,14 @@ export default class Model {
 
       switch (type) {
         case 'v':
-          /// @ts-ignore
           this.vertices.push(new Vec3(...content.map(item => parseFloat(item))))
           break
 
+        case 'vn':
+          this.verticesNormals.push(new Vec3(...content.map(item => parseFloat(item))))
+          break
+
         case 'vt':
-          /// @ts-ignore
           this.textureVertices.push(new Vec3(...content.map(item => parseFloat(item))))
           break
 

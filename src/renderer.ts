@@ -42,7 +42,7 @@ export const drawLine = (p1: Vec3, p2: Vec3, canvasData: ImageData, color: Color
   }
 }
 
-export const drawTriangle = (points: Vec3[], canvasData: ImageData, color: Color, zBuffer: any) => {
+export const drawTriangle = (points: Vec3[], canvasData: ImageData, color: Color, zBuffer: any, lightIntensities: Vec3) => {
   const bbox = getBoundingBox(...points)
 
   const P = new Vec3(0, 0, 0)
@@ -61,13 +61,15 @@ export const drawTriangle = (points: Vec3[], canvasData: ImageData, color: Color
       if (zBuffer[zIndex] === undefined || zBuffer[zIndex] < P.z) {
         zBuffer[zIndex] = P.z
 
-        drawPixel(canvasData, P, color)
+        const lightIntensity = bc_screen.multiply(lightIntensities)
+
+        drawPixel(canvasData, P, color.copy().luminosity(lightIntensity))
       }
     }
   }
 }
 
-export const drawTriangleTexture = (points: Vec3[], texturePoints: Vec3[], canvasData: ImageData, texture: ImageData, zBuffer: any, lightIntensity = 1) => {
+export const drawTriangleTexture = (points: Vec3[], texturePoints: Vec3[], canvasData: ImageData, texture: ImageData, zBuffer: any, lightIntensities: Vec3) => {
   const bbox = getBoundingBox(...points)
   const textureBbox = getBoundingBox(...texturePoints)
 
@@ -89,9 +91,9 @@ export const drawTriangleTexture = (points: Vec3[], texturePoints: Vec3[], canva
 
         const textureCoord = translateCoords(P, bbox, textureBbox)
         const color = getPixel(texture, textureCoord)
-        color.luminosity(lightIntensity)
+        const lightIntensity = bc_screen.multiply(lightIntensities)
 
-        drawPixel(canvasData, P, color)
+        drawPixel(canvasData, P, color.luminosity(lightIntensity))
       }
     }
   }

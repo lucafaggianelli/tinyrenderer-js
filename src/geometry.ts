@@ -2,6 +2,12 @@ export class Color {
   constructor (...channels: number[])
   constructor (public r: number, public g: number, public b: number, public a: number = 255) {}
 
+  static WHITE = new Color(255, 255, 255)
+
+  copy () {
+    return new Color(this.r, this.g, this.b, this.a)
+  }
+
   luminosity (factor: number) {
     this.r *= factor
     this.g *= factor
@@ -55,6 +61,13 @@ export class Vec3 {
     this.x = Math.round(this.x)
     this.y = Math.round(this.y)
     this.z = Math.round(this.z)
+    return this
+  }
+
+  abs () {
+    this.x = Math.abs(this.x)
+    this.y = Math.abs(this.y)
+    this.z = Math.abs(this.z)
     return this
   }
 }
