@@ -1,7 +1,8 @@
-import { Matrix, Vec3 } from "./geometry.js"
+import { Color, Matrix, Vec3 } from './geometry'
+import Model from './model'
 import { drawTriangle, drawTriangleTexture } from './renderer.js'
 
-const buildViewport = (x, y, w, h, depth) => {
+const buildViewport = (x: number, y: number, w: number, h: number, depth: number) => {
   const m = Matrix.identity(4)
 
   m.data[0][3] = x+w/2
@@ -16,9 +17,16 @@ const buildViewport = (x, y, w, h, depth) => {
 }
 
 export default class Engine {
-  lastFrameTime = 0
+  camera?: Vec3
+  canvas: HTMLCanvasElement
+  lightDirection?: Vec3
 
-  constructor (canvas) {
+  private fpsContainer: HTMLElement
+  private lastFrameTime = 0
+  private projection: Matrix
+  private viewport: Matrix
+
+  constructor (canvas: HTMLCanvasElement) {
     this.canvas = canvas
 
     this.canvas.style.backgroundColor = 'slategrey'
@@ -26,14 +34,12 @@ export default class Engine {
     this.canvas.style.height = '800'
     this.canvas.style.margin = '0 auto'
     this.canvas.style.display = 'block'
-    this.ctx = this.canvas.getContext('2d')
-
-    this.screenSize = Math.min(this.canvas.height, this.canvas.height)
-
-    this.camera = new Vec3(0, 0, 20)
 
     this.projection = Matrix.identity(4)
-    this.projection.data[3][2] = -1 / this.camera.z
+
+    if (this.camera) {
+      this.projection.data[3][2] = -1 / this.camera.z
+    }
 
     this.viewport = buildViewport(this.canvas.width / 8, this.canvas.height / 8, this.canvas.width * 3/4, this.canvas.height * 3/4, 255)
 
@@ -45,25 +51,24 @@ export default class Engine {
     return this.viewport.multiply(this.projection)
   }
 
-  renderModel (model) {
+  renderModel (model: Model) {
     const canvasWidth = this.canvas.width
     const canvasHeight = this.canvas.height
-    const canvasData = this.ctx.getImageData(0, 0, canvasWidth, canvasHeight)
+    const canvasData = this.getCanvasContext().getImageData(0, 0, canvasWidth, canvasHeight)
     const zBuffer = {}
-
-    const highlightFaces = []
 
     const transformations = this.baseTransformations()
 
     for (const faceIndex in model.faces) {
-      const isHighlighted = highlightFaces.includes(parseInt(faceIndex))
       const face = model.faces[faceIndex]
       const facetTexture = model.textureFacets[faceIndex]
 
       const faceNormal = model.vertices[face[2]].subtract(model.vertices[face[0]])
         .crossProduct(model.vertices[face[1]].subtract(model.vertices[face[0]]))
 
-      const lightIntensity = faceNormal.normalize().multiply(this.lightDirection)
+      const lightIntensity = this.lightDirection
+        ? faceNormal.normalize().multiply(this.lightDirection)
+        : 1
 
       if (lightIntensity <= 0) {
         continue
@@ -78,41 +83,47 @@ export default class Engine {
         return v
       })
 
-      const texturePoints = facetTexture.map(vertexIndex => {
-        const vertex = model.textureVertices[vertexIndex]
+      if (model.texture) {
+        const texturePoints = facetTexture.map(vertexIndex => {
+          const vertex = model.textureVertices[vertexIndex]
 
-        return new Vec3(
-          Math.round((vertex.x) * model.texture.width),
-          model.texture.height - Math.round((vertex.y) * model.texture.height),
-          vertex.z
-        )
-      })
+          return new Vec3(
+            vertex.x * model.texture!.width,
+            model.texture!.height - vertex.y * model.texture!.height,
+            vertex.z
+          ).roundCoordinates()
+        })
 
-      if (isHighlighted) {
-        console.log('Facet', trianglePoints, face.map(vertexIndex => model.vertices[vertexIndex]))
-        console.log('Texture', texturePoints, facetTexture.map(vertexIndex => model.textureVertices[vertexIndex]))
-
-        const color = [ 255 * lightIntensity, 0, 0 ]
-        drawTriangle(trianglePoints, canvasData, color, zBuffer)
-      } else {
         drawTriangleTexture(trianglePoints, texturePoints, canvasData, model.texture, zBuffer, lightIntensity)
+      } else {
+        const color = new Color(255, 255, 255).luminosity(lightIntensity)
+        drawTriangle(trianglePoints, canvasData, color, zBuffer)
       }
     }
 
     this.updateCanvas(canvasData)
   }
 
-  updateCanvas (canvasData) {
-    this.ctx.putImageData(canvasData, 0, 0)
+  private getCanvasContext () {
+    const ctx = this.canvas.getContext('2d')
+    if (!ctx) {
+      throw new Error('Cant obtain canvas context')
+    }
+
+    return ctx
+  }
+
+  updateCanvas (canvasData: ImageData) {
+    this.getCanvasContext().putImageData(canvasData, 0, 0)
   }
 
   animate () {
     window.requestAnimationFrame((time) => {
-      this.fps = 1 / ((performance.now() - this.lastFrameTime) / 1000);
+      const fps = 1 / ((performance.now() - this.lastFrameTime) / 1000)
       this.lastFrameTime = time
-      this.fpsContainer.innerHTML = this.fps
+      this.fpsContainer.innerHTML = fps.toFixed(0)
 
-      this.renderModel(model)
+      // this.renderModel(model)
     })
   }
 }
