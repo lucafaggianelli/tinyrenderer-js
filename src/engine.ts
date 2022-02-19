@@ -16,6 +16,24 @@ const buildViewport = (x: number, y: number, w: number, h: number, depth: number
   return m
 }
 
+const lookAt = (eye: Vec3, center: Vec3, up: Vec3) => {
+  const z = eye.subtract(center).normalize()
+  const x = up.crossProduct(z).normalize()
+  const y = z.crossProduct(x).normalize()
+
+  const inverse = Matrix.identity(4)
+  const tr = Matrix.identity(4)
+
+  for (let i = 0; i < 3; i++) {
+    inverse.data[0][i] = x.byIndex(i)
+    inverse.data[1][i] = y.byIndex(i)
+    inverse.data[2][i] = z.byIndex(i)
+    tr.data[i][3] = -center.byIndex(i)
+  }
+
+  return inverse.multiply(tr)
+}
+
 export default class Engine {
   camera?: Vec3
   canvas: HTMLCanvasElement
@@ -23,24 +41,26 @@ export default class Engine {
 
   private fpsContainer: HTMLElement
   private lastFrameTime = 0
-  private projection: Matrix
+  private perspectiveProjection: Matrix
   private viewport: Matrix
 
   constructor (canvas: HTMLCanvasElement) {
+    // Canvas setup
     this.canvas = canvas
-
     this.canvas.style.backgroundColor = 'slategrey'
     this.canvas.style.width = '800'
     this.canvas.style.height = '800'
     this.canvas.style.margin = '0 auto'
     this.canvas.style.display = 'block'
 
-    this.projection = Matrix.identity(4)
-
-    if (this.camera) {
-      this.projection.data[3][2] = -1 / this.camera.z
-    }
-
+    // Transformations
+    /**
+     * Transformation to create the 3D effect
+     */
+    this.perspectiveProjection = Matrix.identity(4)
+    /**
+     * Clip coordinates to the screen coordinates
+     */
     this.viewport = buildViewport(this.canvas.width / 8, this.canvas.height / 8, this.canvas.width * 3/4, this.canvas.height * 3/4, 255)
 
     this.fpsContainer = document.createElement('div')
@@ -48,7 +68,13 @@ export default class Engine {
   }
 
   baseTransformations () {
-    return this.viewport.multiply(this.projection)
+    if (!this.camera) {
+      throw new Error('Please define a camera')
+    }
+
+    const view = lookAt(this.camera, new Vec3(0, 0, 0), new Vec3(0, 1, 0))
+
+    return this.viewport.multiply(this.perspectiveProjection).multiply(view)
   }
 
   renderModel (model: Model) {

@@ -63,6 +63,10 @@ export class Vec3 {
     this.z = Math.round(this.z)
     return this
   }
+
+  byIndex (i: number) {
+    return [ this.x, this.y, this.z ][i]
+  }
 }
 
 export class Box {
