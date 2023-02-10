@@ -28,6 +28,14 @@ export class Vec3 {
     )
   }
 
+  add (v: Vec3) {
+    return new Vec3(
+      this.x + v.x,
+      this.y + v.y,
+      this.z + v.z
+    )
+  }
+
   subtract (v: Vec3) {
     return new Vec3(
       this.x - v.x,
@@ -42,6 +50,13 @@ export class Vec3 {
 
   multiply (v: Vec3) {
     return this.x * v.x + this.y * v.y + this.z * v.z
+  }
+
+  scale (factor: number) {
+    this.x *= factor
+    this.y *= factor
+    this.z *= factor
+    return this
   }
 
   normalize () {

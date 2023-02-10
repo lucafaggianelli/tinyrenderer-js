@@ -38,6 +38,7 @@ export default class Engine {
   camera?: Vec3
   canvas: HTMLCanvasElement
   lightDirection?: Vec3
+  models: Model[] = []
 
   private fpsContainer: HTMLElement
   private lastFrameTime = 0
@@ -141,13 +142,23 @@ export default class Engine {
     this.getCanvasContext().putImageData(canvasData, 0, 0)
   }
 
-  animate () {
+  render (callback?: () => void) {
+    if (callback) {
+      callback()
+    }
+
+    this.getCanvasContext().clearRect(0, 0, this.canvas.width, this.canvas.height)
+
+    for (const model of this.models) {
+      this.renderModel(model)
+    }
+
     window.requestAnimationFrame((time) => {
       const fps = 1 / ((performance.now() - this.lastFrameTime) / 1000)
       this.lastFrameTime = time
       this.fpsContainer.innerHTML = fps.toFixed(0)
 
-      // this.renderModel(model)
+      // this.render(callback)
     })
   }
 }

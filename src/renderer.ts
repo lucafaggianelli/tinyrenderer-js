@@ -112,5 +112,10 @@ function drawPixel(canvasData: ImageData, point: Vec3, color: Color) {
 function getPixel(canvasData: ImageData, point: Vec3) {
   const index = (point.x + point.y * canvasData.width) * 4
 
-  return new Color(...canvasData.data.slice(index, index + 4))
+  return new Color(
+    canvasData.data[index + 0],
+    canvasData.data[index + 1],
+    canvasData.data[index + 2],
+    canvasData.data[index + 3]
+  )
 }
